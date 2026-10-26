@@ -1695,6 +1695,9 @@ window.SITE_CONFIG = {
     /* 구글챗 알림(선택): 구글챗 스페이스 → 앱 및 통합 → 웹훅 추가 에서 만든 주소를 따옴표 안에 붙여넣으세요.
        비워 두면 이메일로만 받습니다. ※ 정적 페이지 특성상 이 주소는 페이지 소스에 노출됩니다(아래 안내 참고). */
     CHAT_WEBHOOK: "",
+    /* ★ 권장: 구글 Apps Script 웹 앱 주소 (apps-script/설정안내.md 참고).
+       입력하면 FormSubmit·CHAT_WEBHOOK 대신 이 주소로만 보내며, 이메일·구글챗·구글시트 기록을 스크립트가 처리합니다. */
+    APPS_SCRIPT_URL: "",
     ENDPOINT: "",
     SUBJECT: "[청라 아크원 푸르지오] 홈페이지 신규 접수"
   },
@@ -1898,6 +1901,14 @@ window.SITE_CONFIG = {
   function sendLead(payload) {
     var f = cfg.FORM || {};
     var jobs = [];
+    if (f.APPS_SCRIPT_URL) {
+      /* 구글 Apps Script: 이메일·구글챗·시트 기록을 서버 쪽에서 처리 (브라우저는 응답을 읽을 수 없어 전송되면 성공으로 봄) */
+      return fetch(f.APPS_SCRIPT_URL, {
+        method: "POST", mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      }).then(function () { return true; }).catch(function () { return false; });
+    }
     var mailUrl = f.ENDPOINT || (f.TO_EMAIL ? "https://formsubmit.co/ajax/" + f.TO_EMAIL : "");
     if (mailUrl) {
       var body = { "_subject": f.SUBJECT || "홈페이지 신규 접수", "_template": "table", "_captcha": "false" };
@@ -1908,7 +1919,9 @@ window.SITE_CONFIG = {
         body: JSON.stringify(body)
       }).then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (d) {
-          return res.ok && (d.success === true || d.success === "true");
+          var ok = res.ok && (d.success === true || d.success === "true");
+          if (!ok && window.console) console.warn("[접수 전송 실패]", res.status, d.message || d);
+          return ok;
         });
       }).catch(function () { return false; }));
     }
@@ -1953,7 +1966,7 @@ window.SITE_CONFIG = {
       if (!el.privacy.checked) return invalid(el.privacy, "개인정보 수집·이용 안내에 동의해 주세요.");
 
       var f = cfg.FORM || {};
-      if (!f.ENDPOINT && !f.TO_EMAIL && !f.CHAT_WEBHOOK) { setNotice("접수 연결을 준비 중입니다. 상담문의 " + (cfg.PHONE_DISPLAY || "") + " 로 연락해 주세요.", true); return; }
+      if (!f.APPS_SCRIPT_URL && !f.ENDPOINT && !f.TO_EMAIL && !f.CHAT_WEBHOOK) { setNotice("접수 연결을 준비 중입니다. 상담문의 " + (cfg.PHONE_DISPLAY || "") + " 로 연락해 주세요.", true); return; }
 
       var gapKey = "arkone-last-submit-" + o.source;
       var last = Number(store("session", gapKey) || 0);
