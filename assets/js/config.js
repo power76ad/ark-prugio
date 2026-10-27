@@ -63,7 +63,7 @@ window.SITE_CONFIG = {
 
   /* 외부 링크 */
   LINKS: {
-    notice:     "https://arkone-prugio.com/pages/gonggo",   /* 모집공고 */
+    notice:     "assets/docs/gonggo.pdf",                  /* 모집공고문 (PDF, 분양문의 번호 1844-1554 로 수정본) */
     official:   "https://arkone-prugio.com/",               /* 공식 홈페이지 */
     mapModel:   "https://naver.me/xNpQLQ3L",                /* 견본주택 네이버지도 */
     mapPromo:   "https://naver.me/xwmqyGWk"                 /* 홍보관 네이버지도 */
